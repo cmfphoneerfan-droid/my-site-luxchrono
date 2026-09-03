@@ -16,23 +16,25 @@ jobs:
           node-version: '20'
 
       - name: Install Dependencies
-        run: npm install @google/genai
+        run: npm install @google/generative-ai
 
       - name: Generate HTML with Gemini
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           node -e "
-          const { GoogleGenAI } = require('@google/genai');
+          const { GoogleGenerativeAI } = require('@google/generative-ai');
           const fs = require('fs');
-          
+
           async function run() {
-            const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-            const response = await ai.models.generateContent({
-              model: 'gemini-1.5-pro',
-              contents: 'یک صفحه هوم‌پیج مدرن و شیک با HTML و Tailwind CSS بساز. شامل هدر، بنر اصلی، بخش خدمات و فوتر باشد.',
-            });
-            let code = response.text.replace(/```html/g, '').replace(/```/g, '').trim();
+            const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+            const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+            
+            const prompt = 'یک صفحه هوم‌پیج مدرن و شیک با HTML و Tailwind CSS بساز. شامل هدر، بنر اصلی، بخش خدمات و فوتر باشد.';
+            const result = await model.generateContent(prompt);
+            const response = await result.response;
+            let code = response.text().replace(/```html/g, '').replace(/```/g, '').trim();
+            
             fs.writeFileSync('index.html', code);
           }
           run();
@@ -45,4 +47,3 @@ jobs:
           git add index.html
           git commit -m "🤖 Auto-generated index.html via Gemini" || exit 0
           git push
-
